@@ -1,0 +1,37 @@
+name: Lint/Validate Github Actions files
+
+on:
+  workflow_call:
+
+jobs:
+  lint_validate_actions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout Actoinlint Configs
+        uses: actions/checkout@v3
+        with:
+          repository: circlefin/circle-public-github-workflows
+          ref: stable
+          path: .actionlint
+          sparse-checkout: |-
+            config/linters
+
+      - name: Run actionlint
+        env:
+          ACTIONLINT_DL: https://github.com/rhysd/actionlint/releases/download/v1.6.26/actionlint_1.6.26_linux_amd64.tar.gz
+          ACTIONLINT_SHA: f0294c342af98fad4ff917bc32032f28e1b55f76aedf291886ec10bbed7c12e1
+        shell: bash
+        run: |
+          echo "::add-matcher::.actionlint/config/linters/actionlint-matcher.json"
+          curl -sSfLo "${RUNNER_TEMP}/actionlint.tar.gz" ${ACTIONLINT_DL}
+          sha256sum -c <<< "${ACTIONLINT_SHA} ${RUNNER_TEMP}/actionlint.tar.gz"
+          tar xvzf ${RUNNER_TEMP}/actionlint.tar.gz actionlint
+
+          ./actionlint -color -shellcheck="" --config-file .actionlint/config/linters/actionlint.yaml
+
+      - name: json-yaml-validate
+        uses: GrantBirki/json-yaml-validate@v2.3.1
+        with:
+          comment: true

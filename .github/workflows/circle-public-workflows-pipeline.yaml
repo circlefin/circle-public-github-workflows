@@ -1,0 +1,33 @@
+name: CIRCLE-PUBLIC-GITHUB-WORKFLOWS Pipeline
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+jobs:
+  # lint-actions:
+  #   if: github.event_name == 'pull_request'
+  #   uses: ./.github/workflows/actions-lint.yaml
+
+  # pr-scan:
+  #   if: github.event_name == 'pull_request'
+  #   uses: ./.github/workflows/pr-scan.yaml
+
+  conventional-commit-release:
+    uses: ./.github/workflows/conventional-commit-release.yaml
+    with:
+      release_type: simple
+      additional_unqualified_tags: true
+      extra_tags: stable
+    secrets:
+      RELEASE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  attach-assets:
+    uses: ./.github/workflows/attach-release-assets.yaml
+    needs:
+      - conventional-commit-release
+    if: needs.conventional-commit-release.outputs.release_created == 'true'
+    with:
+      release_tag: ${{ needs.conventional-commit-release.outputs.release_tag }}

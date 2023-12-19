@@ -1,0 +1,133 @@
+name: Pull Request Scan
+
+on:
+  workflow_call:
+    inputs:
+      fail_on_severity:
+        description: |
+          Threshold for severity level which will trigger pipeline failure.
+          Possible values: low, moderate, high, critical.
+        required: false
+        type: string
+        default: critical
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup
+        shell: bash
+        run: |-
+          # Can't use RUNNER_TEMP because actions/checkout requires the path be inside the workdir
+          SCAN_TEMP=$(mktemp -d scan-temp.XXXXX)
+          echo "SCAN_TEMP=${SCAN_TEMP}" >> ${GITHUB_ENV}
+
+          # install js-yaml and spdx-expression-parse
+          npm i js-yaml spdx-expression-parse
+
+      - name: Checkout Configs
+        uses: actions/checkout@v3
+        with:
+          repository: circlefin/circle-public-github-workflows
+          ref: stable
+          path: ${{ env.SCAN_TEMP }}/scan
+          sparse-checkout: |-
+            config/scan
+
+      - name: Configure dependency review
+        uses: actions/github-script@v7
+        id: config
+        env:
+          SEVERITY: ${{ inputs.fail_on_severity }}
+        with:
+          script: |-
+            const path = require('path');
+            const fs = require('fs');
+            const yaml = require('js-yaml');
+            const spdxParse = require('spdx-expression-parse');
+
+            const configsDir = path.join(process.env.SCAN_TEMP, 'scan', 'config', 'scan');
+
+            if (context.eventName.startsWith("pull_request")) {
+              core.setOutput("is-pr", "true");
+            }
+
+            const validSeverities = ['low', 'moderate', 'high', 'critical'];
+            let severity = process.env.SEVERITY;
+            if (!validSeverities.includes(severity)) {
+              core.warning(`Invalid value for 'fail_on_severity': ${severity}`);
+              severity = 'low';
+            }
+
+            const privateRepo = context.payload?.repository?.private || false;
+
+            let licenseCfgFile = path.join(configsDir, 'license.yaml');
+            try {
+              const licenseCfg = yaml.load(fs.readFileSync(licenseCfgFile));
+              const allowedLicensesRaw = [];
+              allowedLicensesRaw.push(...licenseCfg.license.notice);
+              if (privateRepo) {
+                allowedLicensesRaw.push(...licenseCfg.license.reciprocal);
+              }
+              // Filter out non-SPDX licenses
+              const allowedLicenses = allowedLicensesRaw.filter(l => {
+                try {
+                  spdxParse(l);
+                  return true;
+                } catch (_) {
+                  return false;
+                }
+              });
+
+              let ignoredPackages = [];
+              try {
+                ignoredPackages = fs.readFileSync('.licenseignore').toString('utf-8').split('\n').filter(l => l.startsWith('pkg:'));
+              } catch (err) {
+                core.info(`Failed to read .licenseignore file: ${err}`);
+              }
+
+              let ignoredGhsas = [];
+              try {
+                for ( ghsa of fs.readFileSync('.ghsaignore').toString('utf-8').split('\n').filter(l => l.startsWith('GHSA-')) ){
+                  try {
+                    const ghsaTokens = ghsa.split(/\s+/);
+                    if ( len(ghsaTokens) !== 2 ) {
+                      throw new Error("Must specify GHSA ID and expiration date");
+                    }
+                    const expiration = Date.parse(ghsaTokens[1].replace(/^exp:/,''));
+                    if (expiration > Date.now()) {
+                      ignoredGhsas.push(ghsaTokens[0]);
+                    }
+                  } catch (err) {
+                    core.warning(`Failed to parse line "${ghsa}" in .ghsaignore: ${err}`);
+                  }
+                }
+              } catch (err) {
+                core.info(`Failed to read .ghsasignore file: ${err}`);
+              }
+
+              const depReviewCfg = {
+                'vulnerability-check': true,
+                'fail-on-severity': severity,
+                'license-check': true,
+                'fail-on-scopes': ['runtime', 'development', 'unknown'],
+                'comment-summary-in-pr': 'always',
+                'allow-licenses': allowedLicenses,
+                'allow-dependencies-license': ignoredPackages,
+                'allow-ghsas': ignoredGhsas,
+              }
+              licenseCfgFile = path.join(process.env.RUNNER_TEMP, 'dep-review.yaml');
+              fs.writeFileSync(licenseCfgFile, yaml.dump(depReviewCfg));
+            } catch (err) {
+              core.error(`Failed to generate dependency review config file: ${err}`);
+              core.setFailed(err);
+            }
+            core.setOutput("config-file", licenseCfgFile);
+
+      - name: Pull Request Dependency license check
+        uses: actions/dependency-review-action@v3
+        if: >
+          steps.config.outcome == 'success' &&
+          steps.config.outputs.is-pr == 'true'
+        with:
+          config-file: ${{ steps.config.outputs.config-file }}

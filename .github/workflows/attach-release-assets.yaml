@@ -1,0 +1,220 @@
+# Attach assets to an existing release, or create a new release and attach assets.
+# Optionally generate an SBOM from Github Dependency graph and include it as an asset.
+name: release-attach-assets
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: |
+          Tag name to create (or use if it already exists) for the release.
+          If the release already exists, assets will be attached to it.
+          If unset, a timestamped release will be created.
+        type: string
+        required: false
+        default: ''
+      artifact_file_globs:
+        description: |
+          Newline-separated list of additional glob patterns to find in build artifacts.
+          Only files which are stored as build artifacts in a previous job will be included.
+          See [glob-match](https://github.com/marketplace/actions/glob-match) action for details.
+        type: string
+        required: false
+        default: ''
+      create_manifest:
+        description: |
+          Generate a manifest file containing the SHA256 checksums of included files.
+        type: boolean
+        required: false
+        default: true
+      manifest_filename:
+        description: |
+          Name of manifest file to create. May be useful to override in the case of multiple runs
+          of this workflow since filenames can't be repeated in a release.
+        type: string
+        required: false
+        default: MANIFEST
+      generate_sbom:
+        description: |
+          Generate an SPDX-formatted SBOM from Github dependency graph and include it
+          as an attached asset.
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  release_attach_assets:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && format('refs/heads/{0}', github.event.repository.default_branch) == github.ref
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v3
+        if: inputs.artifact_file_globs != ''
+        id: download-artifacts
+        with:
+          path: artifacts
+
+      - name: Perform setup
+        shell: bash
+        id: setup
+        env:
+          TAG: ${{ inputs.release_tag }}
+        run: |-
+          # Create assets directory
+          ASSETS_DIR="${RUNNER_TEMP}/assets"
+          mkdir -p $ASSETS_DIR
+          echo "ASSETS_DIR=${ASSETS_DIR}" >> ${GITHUB_ENV}
+
+          if [ -z "${TAG}" ]; then
+            TAG="release-$(date '+%Y-%m-%dT%H:%M:%S')"
+          fi
+          echo "tag=${TAG}" >> ${GITHUB_OUTPUT}
+
+      - name: Generate SBOM from Dependency Graph
+        uses: actions/github-script@v7
+        if: inputs.generate_sbom
+        env:
+          RELEASE_TAG: ${{ steps.setup.outputs.tag }}
+        with:
+          script: |-
+            const fs = require('fs');
+            const path = require('path');
+            try {
+              const sbomResp = await github.rest.dependencyGraph.exportSbom({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              });
+              const fileName = `${context.repo.repo}-${process.env.RELEASE_TAG}-${context.sha}.spdx.json`;
+              fs.writeFileSync(path.join(process.env.ASSETS_DIR, fileName), JSON.stringify(sbomResp.data.sbom));
+            } catch (err) {
+              core.error(`Failed to export SBOM from Dependency Graph: ${err}`);
+              core.setFailed(err);
+            }
+
+      - name: Find matching files in build artifacts
+        uses: tj-actions/glob@v17
+        if: steps.download-artifacts.conclusion == 'success'
+        id: glob
+        with:
+          files: ${{ inputs.artifact_file_globs }}
+          working-directory: artifacts
+          match-directories: false
+          strip-top-level-dir: false
+
+      - name: Compile required assets
+        shell: bash
+        if: steps.glob.conclusion == 'success'
+        id: compile-assets
+        env:
+          PATHS_FILE: ${{ steps.glob.outputs.paths-output-file }}
+        run: |-
+          if [ -s "${PATHS_FILE}" ]; then
+            echo "Found the following matching artifacts: "
+            cat "${PATHS_FILE}"
+            while IFS="" read -r file || [ -n "$p" ]
+            do
+              mv "$file" ${ASSETS_DIR}/$(basename "$file")
+            done < "${PATHS_FILE}"
+          else
+            echo "No artifacts matched the specified patterns"
+          fi
+
+      - name: Generate manifest of assets
+        if: inputs.create_manifest
+        env:
+          MANIFEST_FILENAME: ${{ inputs.manifest_filename }}
+        run: |-
+          cd ${ASSETS_DIR}
+          sha256sum * | tee ${MANIFEST_FILENAME}
+
+      - name: Attach assets to release
+        uses: actions/github-script@v7
+        env:
+          RELEASE_TAG: ${{ steps.setup.outputs.tag }}
+        with:
+          script: |-
+            const fs = require('fs');
+            const assert = require('assert');
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const commit = context.sha;
+            const assetsDir = process.env['ASSETS_DIR'];
+            const releaseTag = process.env['RELEASE_TAG'].trim();
+
+            if (releaseTag === '') {
+              core.setFailed('No release tag specified. Unable to proceed.');
+              process.exit();
+            }
+
+            // Fetch or create release
+            let resp;
+            try {
+              resp = await github.rest.repos.getReleaseByTag({
+                owner: owner,
+                repo: repo,
+                tag: releaseTag,
+              });
+            } catch(err) {
+              core.info(`Failed to fetch existing release with tag ${releaseTag}: ${err}`);
+              const createReleaseOpts = {
+                owner: owner,
+                repo: repo,
+                tag_name: releaseTag,
+                target_commitish: commit,
+                make_latest: 'true',
+              };
+              try {
+                core.info("Attempting to create new release");
+                try {
+                  resp = await github.rest.repos.createRelease({...createReleaseOpts, generate_release_notes: true});
+                } catch(err) {
+                  // If the body was too long, attempt to create the release without embedded release notes.
+                  if (err?.message?.includes("body is too long")) {
+                    core.warning(`Generated release notes too long. Creating release without notes. ${err}`);
+                    resp = await github.rest.repos.createRelease(createReleaseOpts);
+                  } else {
+                    throw err;
+                  }
+                }
+              } catch(err) {
+                core.error(`Failed to fetch or create release: ${err}`);
+              }
+            }
+
+            const releaseId = resp?.data?.id;
+            if (!releaseId) {
+              core.setFailed(`No release ID in response: ${resp}`);
+              process.exit();
+            }
+            core.notice(`Attaching assets to release ${resp.data.html_url}`)
+
+            const fileGlob = await glob.create(`${assetsDir}/*`, {
+              followSymbolicLinks: false,
+              matchDirectories: false,
+            });
+            for await (const file of fileGlob.globGenerator()) {
+              const baseName = file.split('/').pop();
+              core.info(`Attaching ${baseName} to release ${releaseId}`);
+
+              try {
+                const data = fs.readFileSync(file);
+                await github.rest.repos.uploadReleaseAsset({
+                  owner: owner,
+                  repo: repo,
+                  release_id: releaseId,
+                  name: baseName,
+                  data: data,
+                });
+              } catch(err) {
+                if (err?.status === 422) {
+                  core.warning(`A file named ${baseName} already exists in this release!`);
+                } else {
+                  core.error(`Failed to upload file ${file} to release: ${err}`);
+                  core.setFailed(err);
+                  process.exit();
+                }
+              }
+            }

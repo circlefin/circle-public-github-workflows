@@ -1,0 +1,270 @@
+name: Conventional Commit & Release Please
+
+on:
+  workflow_call:
+    inputs:
+      release_type:
+        description: |
+          The type of project to release.
+          See [release-please](https://github.com/google-github-actions/release-please-action#release-types-supported)
+          for a full list of supported release types
+        type: string
+        required: true
+      changelog_types:
+        description: "Additional changelog types to include. Should be a JSON-encoded array of objects."
+        type: string
+        required: false
+        default: "[]"
+      allowed_scopes:
+        description: "Comma-separated list of scopes which are allowed in commit message"
+        type: string
+        required: false
+        default: ""
+      allowed_subject_cases:
+        description: "Comma-separated list of subject cases which are allowed in commit message"
+        type: string
+        required: false
+        default: "lower-case,upper-case,camel-case,kebab-case,pascal-case,sentence-case,snake-case,start-case"
+      additional_unqualified_tags:
+        description: "Additional tags produced for major.minor and major"
+        type: boolean
+        required: false
+        default: true
+      include_v_in_tag:
+        description: "Whether or not include 'v' in tags and releases. Default true"
+        type: boolean
+        required: false
+        default: true
+      pull_request_title_template:
+        description: "Template for the release-please managed pull request title"
+        type: string
+        required: false
+        default: "chore${scope}: release${component} ${version} (auto-release)"
+      extra_files:
+        description: "Additional files to update using release please generic updater"
+        type: string
+        required: false
+      lint_commits:
+        description: "Whether or not commits should be linted in addition to pull request title"
+        type: boolean
+        required: false
+        default: true
+      extra_tags:
+        description: "Comma-separated list of additional tags to create on the release commit"
+        type: string
+        required: false
+        default: ""
+    outputs:
+      release_created:
+        description: "Whether or not a release has been created in this workflow instance"
+        value: ${{ jobs.release.outputs.release_created }}
+      release_tag:
+        description: "Main release tag associated with a created release"
+        value: ${{ jobs.release.outputs.release_tag }}
+      additional_tags:
+        description: "Additional release tags associated with a created release, when additional_unqualified_tags is set"
+        value: ${{ jobs.release.outputs.additional_tags }}
+      major_minor_tag:
+        description: "Major Minor tag associated with a created release, when additional_unqualified_tags is set"
+        value: ${{ jobs.release.outputs.major_minor_tag }}
+      major_tag:
+        description: "Major tag associated with a created release, when additional_unqualified_tags is set"
+        value: ${{ jobs.release.outputs.major_tag }}
+    secrets:
+      RELEASE_TOKEN:
+        description: Github PAT used for executing the release-please action. Only required for default branch builds.
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  commit-lint:
+    name: PR Title and Commits Lint
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Calculate Fetch Depth
+        if: inputs.lint_commits
+        id: fetch-depth
+        run: echo "depth=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout repo
+        if: steps.fetch-depth.conclusion == 'success'
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: ${{ steps.fetch-depth.outputs.depth }}
+
+      - name: Fetch base ref
+        if: steps.checkout.conclusion == 'success'
+        run: git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 14.x
+
+      - name: Install commitlint
+        run: |
+          npm install -g @commitlint/cli @commitlint/config-conventional
+
+      - name: Configure commitlint
+        uses: actions/github-script@v7
+        env:
+          ALLOWED_SCOPES: ${{ inputs.allowed_scopes }}
+          ALLOWED_SUBJECT_CASES: ${{ inputs.allowed_subject_cases }}
+        with:
+          script: |-
+            const fs = require('fs');
+            const allowedScopes = process.env.ALLOWED_SCOPES.trim().split(",").filter(n => n).map(n => { return n.trim(); });
+            const allowedSubjectCases = process.env.ALLOWED_SUBJECT_CASES.trim().split(",").filter(n => n).map(n => { return n.trim(); });
+
+            const config = {
+              extends: ["@commitlint/config-conventional"],
+              rules: {
+                'scope-enum': [2, "always", allowedScopes],
+                'subject-case': [2, "always", allowedSubjectCases],
+              }
+            };
+
+            try {
+              fs.writeFileSync("commitlint.config.js", `module.exports = ${JSON.stringify(config)};`);
+            } catch (err) {
+              core.error(`Failed to write commitlint config: ${err}`);
+              core.setFailed(err);
+            }
+
+      - name: Run commitlint on commits
+        if: inputs.lint_commits
+        id: commit-lint
+        run: |
+          commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
+
+      - name: Run commitlint on pull request title
+        id: commit-lint-pr-title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "${PR_TITLE}" | commitlint
+
+      - name: Comment on Pull Request on Error
+        if: always()
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: Converntional Commits Error
+          delete: ${{ steps.commit-lint.conclusion != 'failure' && steps.commit-lint-pr-title.conclusion != 'failure' }}
+          message: |
+            This repository uses conventional commits for versioning. Please ensure commits and PR title follow the specification.
+            Refer to:
+             [Conventional Commits Summary](https://www.conventionalcommits.org/en/v1.0.0/#summary)
+
+  release:
+    if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    name: Release Please
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      release_tag: ${{ steps.release.outputs.tag_name }}
+      additional_tags: ${{ steps.additional_tags.outputs.tags }}
+      major_minor_tag: ${{ steps.additional_tags.outputs.major_minor_tag }}
+      major_tag: ${{ steps.additional_tags.outputs.major_tag }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Merge default and user input changelog types
+        uses: actions/github-script@v7
+        id: merge-changelog-types
+        env:
+          CHANGELOG_TYPES: ${{ inputs.changelog_types }}
+        with:
+          script: |-
+            const changelogTypes = [
+              {type: "feat",     section: "Features"},
+              {type: "fix",      section: "Bug Fixes"},
+              {type: "perf",     section: "Performance Improvements"},
+              {type: "deps",     section: "Dependencies"},
+              {type: "revert",   section: "Reverts"},
+              {type: "docs",     section: "Documentation"},
+              {type: "style",    section: "Styles"},
+              {type: "chore",    section: "Miscellaneous Chores"},
+              {type: "refactor", section: "Code Refactoring"},
+              {type: "test",     section: "Tests"},
+              {type: "ci",       section: "Continuous Integration"},
+            ];
+            try {
+              const userTypes = JSON.parse(process.env.CHANGELOG_TYPES.trim());
+              if (Array.isArray(userTypes)) {
+                changelogTypes.push(...userTypes);
+              }
+            } catch (err) {
+              core.warning(`Failed to parse "changelog_types" as JSON: ${err}`);
+            }
+
+            core.setOutput("changelog-types-json", JSON.stringify(changelogTypes));
+
+      - uses: google-github-actions/release-please-action@v3
+        id: release
+        with:
+          default-branch: ${{ github.event.repository.default_branch }}
+          release-type: ${{ inputs.release_type }}
+          package-name: ${{ github.event.repository.name }}
+          changelog-types: ${{ steps.merge-changelog-types.outputs.changelog-types-json }}
+          include-v-in-tag: ${{ inputs.include_v_in_tag }}
+          pull-request-title-pattern: ${{ inputs.pull_request_title_template }}
+          extra-files: ${{ inputs.extra_files }}
+          token: ${{ secrets.RELEASE_TOKEN }}
+
+      - name: Create additional tags
+        if: steps.release.outputs.release_created
+        id: additional_tags
+        uses: actions/github-script@v7
+        env:
+          MAJOR: ${{ steps.release.outputs.major }}
+          MINOR: ${{ steps.release.outputs.minor }}
+          CREATE_UNQUALIFIED: ${{ inputs.additional_unqualified_tags }}
+          TAG_PREFIX: ${{ inputs.include_v_in_tag && 'v' || '' }}
+          EXTRA_TAGS: ${{ inputs.extra_tags }}
+        with:
+          script: |-
+            const tagPrefix = process.env.TAG_PREFIX;
+            const majorMinorTag = `${tagPrefix}${process.env.MAJOR}.${process.env.MINOR}`;
+            const majorTag = `${tagPrefix}${process.env.MAJOR}`;
+            const createUnqualified = process.env.CREATE_UNQUALIFIED == 'true';
+            const unqalifiedTags = createUnqualified ? [majorMinorTag, majorTag] : []
+
+            const extraTags = process.env.EXTRA_TAGS.split(",").filter(n => n).map(n => { return n.trim(); });
+            const additionalTags = Array.from(new Set([...unqalifiedTags, ...extraTags]));
+
+            const opts = {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+            };
+
+            for (const tag of additionalTags) {
+              core.info(`Creating/updating tag ${tag}`);
+              try {
+                try {
+                  // Try to create the tag first
+                  await github.rest.git.createRef({...opts, ref: `refs/tags/${tag}`});
+                } catch (err) {
+                  if (err.response?.data?.message !== 'Reference already exists') {
+                    throw (err);
+                  }
+                  // Try to update the ref if it already exists
+                  await github.rest.git.updateRef({...opts, ref: `tags/${tag}`, force: true});
+                }
+                core.info(`Tag ${tag} created/updated pointing to ${opts.sha}`)
+              } catch (err) {
+                core.error(`Failed to create or update tag ${tag}: ${err} (opts: ${JSON.stringify(opts)})`);
+                core.setFailed(err);
+                process.exit();
+              }
+            }
+
+            core.setOutput("tags", JSON.stringify(additionalTags));
+            if (createUnqualified) {
+              core.setOutput("major_minor_tag", majorMinorTag);
+              core.setOutput("major_tag", majorTag);
+            }
