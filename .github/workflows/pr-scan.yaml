@@ -26,10 +26,16 @@ on:
         required: false
         type: string
         default: critical
+      runs-on:
+        description: |
+          Github runner on which this workflow should run.
+        required: false
+        type: string
+        default: ubuntu-latest
 
 jobs:
   scan:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Setup
         shell: bash
