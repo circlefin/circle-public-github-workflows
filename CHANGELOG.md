@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.0](https://github.com/circlefin/circle-public-github-workflows/compare/v1.0.3...v1.1.0) (2024-03-05)
+
+
+### Features
+
+* **scan:** add input to specify runner for pr-scan ([#9](https://github.com/circlefin/circle-public-github-workflows/issues/9)) ([87af36c](https://github.com/circlefin/circle-public-github-workflows/commit/87af36c2c5abcc01fb0af7099d55484429e18ff8))
+
+
+### Bug Fixes
+
+* fixes for repo scan and commitlint ([#11](https://github.com/circlefin/circle-public-github-workflows/issues/11)) ([31ba4d9](https://github.com/circlefin/circle-public-github-workflows/commit/31ba4d9c23d61bf04019fad7cab98a6a3686424e))
+
 ## [1.0.3](https://github.com/circlefin/circle-public-github-workflows/compare/v1.0.2...v1.0.3) (2024-01-09)
 
 
