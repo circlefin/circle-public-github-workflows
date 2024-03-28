@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/circlefin/circle-public-github-workflows/compare/v1.1.0...v1.2.0) (2024-03-28)
+
+
+### Features
+
+* **scan:** make reciprocal licenses configurable ([#13](https://github.com/circlefin/circle-public-github-workflows/issues/13)) ([d6b027d](https://github.com/circlefin/circle-public-github-workflows/commit/d6b027d873df0e12fc8f39f05924b090b8be3189))
+
 ## [1.1.0](https://github.com/circlefin/circle-public-github-workflows/compare/v1.0.3...v1.1.0) (2024-03-05)
 
 
