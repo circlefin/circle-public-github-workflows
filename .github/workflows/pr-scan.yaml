@@ -32,6 +32,13 @@ on:
         required: false
         type: string
         default: ubuntu-latest
+      allow-reciprocal-licenses:
+        description: |
+          (Only applicable to private repositories)
+          Allows licenses classified as 'reciprocal' to be used.
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   scan:
@@ -66,6 +73,7 @@ jobs:
         id: config
         env:
           SEVERITY: ${{ inputs.fail_on_severity }}
+          ALLOW_RECIPROCAL_LICENSES: ${{ inputs.allow-reciprocal-licenses }}
         with:
           script: |-
             const path = require('path');
@@ -88,13 +96,14 @@ jobs:
             }
 
             const privateRepo = context.payload?.repository?.private || false;
+            const isReciprocalLicenseAllowed = process.env.ALLOW_RECIPROCAL_LICENSES === 'true';
 
             let licenseCfgFile = path.join(configsDir, 'license.yaml');
             try {
               const licenseCfg = yaml.load(fs.readFileSync(licenseCfgFile));
               const allowedLicensesRaw = [];
               allowedLicensesRaw.push(...licenseCfg.license.notice);
-              if (privateRepo) {
+              if (privateRepo && isReciprocalLicenseAllowed) {
                 allowedLicensesRaw.push(...licenseCfg.license.reciprocal);
               }
               // Filter out non-SPDX licenses
