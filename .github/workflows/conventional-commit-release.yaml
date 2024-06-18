@@ -109,7 +109,7 @@ jobs:
       - name: Checkout repo
         if: steps.fetch-depth.conclusion == 'success'
         id: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: ${{ steps.fetch-depth.outputs.depth }}
 
@@ -186,7 +186,7 @@ jobs:
       major_minor_tag: ${{ steps.additional_tags.outputs.major_minor_tag }}
       major_tag: ${{ steps.additional_tags.outputs.major_tag }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Merge default and user input changelog types
         uses: actions/github-script@v7
