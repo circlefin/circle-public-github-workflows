@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/circlefin/circle-public-github-workflows/compare/v1.2.0...v1.2.1) (2024-06-18)
+
+
+### Miscellaneous Chores
+
+* **deps:** upgrade action versions to use node 20 ([#15](https://github.com/circlefin/circle-public-github-workflows/issues/15)) ([a82bc74](https://github.com/circlefin/circle-public-github-workflows/commit/a82bc74493008d5b44da4afcdd86fce4e2e446e7))
+
 ## [1.2.0](https://github.com/circlefin/circle-public-github-workflows/compare/v1.1.0...v1.2.0) (2024-03-28)
 
 
