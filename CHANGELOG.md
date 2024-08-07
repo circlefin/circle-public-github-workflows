@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/circlefin/circle-public-github-workflows/compare/v1.3.0...v1.3.1) (2024-08-07)
+
+
+### Bug Fixes
+
+* **release:** ensure release actor pushes gpg-signed commit ([#19](https://github.com/circlefin/circle-public-github-workflows/issues/19)) ([ae003eb](https://github.com/circlefin/circle-public-github-workflows/commit/ae003ebc47f0e0c1dcf96d78fb3c5ca1ae57bb12))
+
 ## [1.3.0](https://github.com/circlefin/circle-public-github-workflows/compare/v1.2.0...v1.3.0) (2024-08-07)
 
 
