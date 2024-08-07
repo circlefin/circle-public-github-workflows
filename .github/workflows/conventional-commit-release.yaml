@@ -244,6 +244,7 @@ jobs:
         uses: actions/checkout@v4.1.1
         with:
           ref: ${{ fromJson(steps.release.outputs.pr).headBranchName }}
+          token: ${{ secrets.RELEASE_TOKEN }}
           fetch-depth: 0
 
       - name: Import GPG key
