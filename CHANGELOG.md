@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.3.0](https://github.com/circlefin/circle-public-github-workflows/compare/v1.2.0...v1.3.0) (2024-08-07)
+
+
+### Features
+
+* **release:** sign commits created by release actor ([#16](https://github.com/circlefin/circle-public-github-workflows/issues/16)) ([dfadf96](https://github.com/circlefin/circle-public-github-workflows/commit/dfadf96557f6bfdbad627b2137d7f602837bd179))
+
+
+### Bug Fixes
+
+* conventional commit release secrets ([#17](https://github.com/circlefin/circle-public-github-workflows/issues/17)) ([7c49cea](https://github.com/circlefin/circle-public-github-workflows/commit/7c49cea9807f640d5b8e4cba584905fa43b00c9f))
+
+
+### Miscellaneous Chores
+
+* **deps:** upgrade action versions to use node 20 ([#15](https://github.com/circlefin/circle-public-github-workflows/issues/15)) ([a82bc74](https://github.com/circlefin/circle-public-github-workflows/commit/a82bc74493008d5b44da4afcdd86fce4e2e446e7))
+
 ## [1.2.0](https://github.com/circlefin/circle-public-github-workflows/compare/v1.1.0...v1.2.0) (2024-03-28)
 
 
