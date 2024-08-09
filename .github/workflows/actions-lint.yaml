@@ -23,10 +23,15 @@ jobs:
   lint_validate_actions:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Harden Runner
+        uses: step-security/harden-runner@5c7944e73c4c2a096b17a9cb74d65b6c2bbafbde # v2.9.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Checkout Actoinlint Configs
-        uses: actions/checkout@v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           repository: circlefin/circle-public-github-workflows
           ref: stable
@@ -48,6 +53,6 @@ jobs:
           ./actionlint -color -shellcheck="" --config-file .actionlint/config/linters/actionlint.yaml
 
       - name: json-yaml-validate
-        uses: GrantBirki/json-yaml-validate@v3.0.0
+        uses: GrantBirki/json-yaml-validate@3a3d883daf915618a7503a2e9c04b8e57130a4b8 # v3.0.0
         with:
           comment: true

@@ -107,6 +107,11 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5c7944e73c4c2a096b17a9cb74d65b6c2bbafbde # v2.9.1
+        with:
+          egress-policy: audit
+
       - name: Calculate Fetch Depth
         if: inputs.lint_commits
         id: fetch-depth
@@ -115,7 +120,7 @@ jobs:
       - name: Checkout repo
         if: steps.fetch-depth.conclusion == 'success'
         id: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           fetch-depth: ${{ steps.fetch-depth.outputs.depth }}
 
@@ -123,7 +128,7 @@ jobs:
         if: steps.checkout.conclusion == 'success'
         run: git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4.0.3
         with:
           node-version: 20.x
 
@@ -132,7 +137,7 @@ jobs:
           npm install -g @commitlint/{cli,config-conventional}@^18.6.0
 
       - name: Configure commitlint
-        uses: actions/github-script@v7
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         env:
           ALLOWED_SCOPES: ${{ inputs.allowed_scopes }}
           ALLOWED_SUBJECT_CASES: ${{ inputs.allowed_subject_cases }}
@@ -172,7 +177,7 @@ jobs:
 
       - name: Comment on Pull Request on Error
         if: always()
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@331f8f5b4215f0445d3c07b4967662a32a2d3e31 # v2.9.0
         with:
           header: Converntional Commits Error
           delete: ${{ steps.commit-lint.conclusion != 'failure' && steps.commit-lint-pr-title.conclusion != 'failure' }}
@@ -192,10 +197,15 @@ jobs:
       major_minor_tag: ${{ steps.additional_tags.outputs.major_minor_tag }}
       major_tag: ${{ steps.additional_tags.outputs.major_tag }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Harden Runner
+        uses: step-security/harden-runner@5c7944e73c4c2a096b17a9cb74d65b6c2bbafbde # v2.9.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Merge default and user input changelog types
-        uses: actions/github-script@v7
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         id: merge-changelog-types
         env:
           CHANGELOG_TYPES: ${{ inputs.changelog_types }}
@@ -225,7 +235,7 @@ jobs:
 
             core.setOutput("changelog-types-json", JSON.stringify(changelogTypes));
 
-      - uses: google-github-actions/release-please-action@v3
+      - uses: google-github-actions/release-please-action@db8f2c60ee802b3748b512940dde88eabd7b7e01 # v3.7.13
         id: release
         with:
           default-branch: ${{ github.event.repository.default_branch }}
@@ -241,7 +251,7 @@ jobs:
       - name: Checkout Release Branch
         if: ${{ steps.release.outputs.pr != '' }}
         id: checkout-release-branch
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7.1.1
         with:
           ref: ${{ fromJson(steps.release.outputs.pr).headBranchName }}
           token: ${{ secrets.RELEASE_TOKEN }}
@@ -250,7 +260,7 @@ jobs:
       - name: Import GPG key
         id: key-import
         if: ${{ steps.checkout-release-branch.conclusion == 'success' }}
-        uses: crazy-max/ghaction-import-gpg@v6.1.0
+        uses: crazy-max/ghaction-import-gpg@01dd5d3ca463c7f10f7f4f7b4f177225ac661ee4 # v6.1.0
         with:
           gpg_private_key: ${{ secrets.RELEASE_ACTOR_GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.RELEASE_ACTOR_GPG_PASSPHRASE }}
@@ -269,7 +279,7 @@ jobs:
       - name: Create additional tags
         if: steps.release.outputs.release_created
         id: additional_tags
-        uses: actions/github-script@v7
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         env:
           MAJOR: ${{ steps.release.outputs.major }}
           MINOR: ${{ steps.release.outputs.minor }}
