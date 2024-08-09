@@ -65,8 +65,13 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && format('refs/heads/{0}', github.event.repository.default_branch) == github.ref
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@5c7944e73c4c2a096b17a9cb74d65b6c2bbafbde # v2.9.1
+        with:
+          egress-policy: audit
+
       - name: Download all build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         if: inputs.artifact_file_globs != ''
         id: download-artifacts
         with:
@@ -89,7 +94,7 @@ jobs:
           echo "tag=${TAG}" >> ${GITHUB_OUTPUT}
 
       - name: Generate SBOM from Dependency Graph
-        uses: actions/github-script@v7
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         if: inputs.generate_sbom
         env:
           RELEASE_TAG: ${{ steps.setup.outputs.tag }}
@@ -110,7 +115,7 @@ jobs:
             }
 
       - name: Find matching files in build artifacts
-        uses: tj-actions/glob@v22
+        uses: tj-actions/glob@2944188f585a0ec102a6a82d9eeb3aed69785393 # v22.0.1
         if: steps.download-artifacts.conclusion == 'success'
         id: glob
         with:
@@ -146,7 +151,7 @@ jobs:
           sha256sum * | tee ${MANIFEST_FILENAME}
 
       - name: Attach assets to release
-        uses: actions/github-script@v7
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         env:
           RELEASE_TAG: ${{ steps.setup.outputs.tag }}
         with:
