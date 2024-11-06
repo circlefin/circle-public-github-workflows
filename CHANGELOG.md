@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/circlefin/circle-public-github-workflows/compare/v1.3.1...v1.3.2) (2024-11-06)
+
+
+### Miscellaneous Chores
+
+* Use fork of dependency review action ([#22](https://github.com/circlefin/circle-public-github-workflows/issues/22)) ([6779eda](https://github.com/circlefin/circle-public-github-workflows/commit/6779eda94afa5b563ba7b242ab8bafd9dc35295d))
+
 ## [1.3.1](https://github.com/circlefin/circle-public-github-workflows/compare/v1.3.0...v1.3.1) (2024-08-07)
 
 
