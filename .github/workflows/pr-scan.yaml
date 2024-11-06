@@ -166,7 +166,7 @@ jobs:
             core.setOutput("config-file", licenseCfgFile);
 
       - name: Pull Request Dependency license check
-        uses: actions/dependency-review-action@v4
+        uses: circlefin/dependency-review-action@1bfb5f6f409079628491f1c22b1d92cba62cffbf
         if: >
           steps.config.outcome == 'success' &&
           steps.config.outputs.is-pr == 'true'
