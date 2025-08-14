@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.3](https://github.com/circlefin/circle-public-github-workflows/compare/v1.3.2...v1.3.3) (2025-08-14)
+
+
+### Bug Fixes
+
+* pass gpg subkey fingerprint ([#26](https://github.com/circlefin/circle-public-github-workflows/issues/26)) ([b4fa689](https://github.com/circlefin/circle-public-github-workflows/commit/b4fa6895176e51bedd232da4b88c5ab5aa6218d1))
+
+
+### Miscellaneous Chores
+
+* support passing fingerprint to crazy-max/gh-action-import-gpg ([#24](https://github.com/circlefin/circle-public-github-workflows/issues/24)) ([cc3a826](https://github.com/circlefin/circle-public-github-workflows/commit/cc3a82682c12d6d6992b2519d14271b1846cb16e))
+
 ## [1.3.2](https://github.com/circlefin/circle-public-github-workflows/compare/v1.3.1...v1.3.2) (2024-11-06)
 
 
