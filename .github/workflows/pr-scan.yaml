@@ -39,6 +39,10 @@ on:
         required: false
         type: boolean
         default: true
+      comment-summary-in-pr:
+        description: Determines if the summary is posted as a comment in the PR itself. Setting this to `always` or `on-failure` requires you to give the workflow the write permissions for pull-requests
+        type: string
+        default: always
 
 jobs:
   scan:
@@ -150,7 +154,7 @@ jobs:
                 'fail-on-severity': severity,
                 'license-check': true,
                 'fail-on-scopes': ['runtime', 'development', 'unknown'],
-                'comment-summary-in-pr': 'always',
+                'comment-summary-in-pr': ${{ inputs.comment-summary-in-pr }}
                 'allow-licenses': allowedLicenses,
                 'allow-dependencies-licenses': ignoredPackages,
                 'allow-ghsas': ignoredGhsas,
