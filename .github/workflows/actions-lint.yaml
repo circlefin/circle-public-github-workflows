@@ -23,10 +23,10 @@ jobs:
   lint_validate_actions:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
       - name: Checkout Actoinlint Configs
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
           repository: circlefin/circle-public-github-workflows
           ref: stable
@@ -48,6 +48,6 @@ jobs:
           ./actionlint -color -shellcheck="" --config-file .actionlint/config/linters/actionlint.yaml
 
       - name: json-yaml-validate
-        uses: GrantBirki/json-yaml-validate@v3.0.0
+        uses: GrantBirki/json-yaml-validate@3a3d883daf915618a7503a2e9c04b8e57130a4b8 # v3.0.0
         with:
           comment: true
