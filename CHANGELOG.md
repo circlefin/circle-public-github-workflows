@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.4](https://github.com/circlefin/circle-public-github-workflows/compare/v1.3.3...v1.3.4) (2025-09-11)
+
+
+### Miscellaneous Chores
+
+* **stepsecurity:** apply security best practices ([#28](https://github.com/circlefin/circle-public-github-workflows/issues/28)) ([2d36cc8](https://github.com/circlefin/circle-public-github-workflows/commit/2d36cc86bf497a8ef93d1377b89f247adeff3aee))
+
 ## [1.3.3](https://github.com/circlefin/circle-public-github-workflows/compare/v1.3.2...v1.3.3) (2025-08-14)
 
 
