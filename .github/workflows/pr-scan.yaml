@@ -55,12 +55,12 @@ jobs:
           npm i js-yaml spdx-expression-parse
 
       - name: Checkout Source
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
           path: ${{ env.SCAN_TEMP }}/src
 
       - name: Checkout Configs
-        uses: actions/checkout@v4
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
           repository: circlefin/circle-public-github-workflows
           ref: stable
@@ -69,7 +69,7 @@ jobs:
             config/scan
 
       - name: Configure dependency review
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         id: config
         env:
           SEVERITY: ${{ inputs.fail_on_severity }}

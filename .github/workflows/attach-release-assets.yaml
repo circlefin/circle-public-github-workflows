@@ -66,7 +66,7 @@ jobs:
     if: github.event_name == 'push' && format('refs/heads/{0}', github.event.repository.default_branch) == github.ref
     steps:
       - name: Download all build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         if: inputs.artifact_file_globs != ''
         id: download-artifacts
         with:
@@ -89,7 +89,7 @@ jobs:
           echo "tag=${TAG}" >> ${GITHUB_OUTPUT}
 
       - name: Generate SBOM from Dependency Graph
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         if: inputs.generate_sbom
         env:
           RELEASE_TAG: ${{ steps.setup.outputs.tag }}
@@ -110,7 +110,7 @@ jobs:
             }
 
       - name: Find matching files in build artifacts
-        uses: tj-actions/glob@v22
+        uses: tj-actions/glob@2deae40528141fc53131606d56b4e4ce2a486b29 # v22.0.2
         if: steps.download-artifacts.conclusion == 'success'
         id: glob
         with:
@@ -146,7 +146,7 @@ jobs:
           sha256sum * | tee ${MANIFEST_FILENAME}
 
       - name: Attach assets to release
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         env:
           RELEASE_TAG: ${{ steps.setup.outputs.tag }}
         with:
