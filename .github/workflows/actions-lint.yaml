@@ -51,3 +51,9 @@ jobs:
         uses: GrantBirki/json-yaml-validate@3a3d883daf915618a7503a2e9c04b8e57130a4b8 # v3.0.0
         with:
           comment: true
+
+      - name: Ensure SHA pinned actions
+        uses: step-security/github-actions-ensure-sha-pinned-actions@f7fe3af55c789fc8c2b9b46a34b9e3a32d5dcd6f # v3.0.25
+        with:
+          allowlist: |
+            circlefin/
