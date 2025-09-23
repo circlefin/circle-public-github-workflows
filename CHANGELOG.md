@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.5](https://github.com/circlefin/circle-public-github-workflows/compare/v1.3.4...v1.3.5) (2025-09-23)
+
+
+### Miscellaneous Chores
+
+* **lint:** use stepsecurity action for checking commit sha pinned actions versions ([#30](https://github.com/circlefin/circle-public-github-workflows/issues/30)) ([d0d9fb0](https://github.com/circlefin/circle-public-github-workflows/commit/d0d9fb06c1c91f2cf27d024bb6fe4ea9e4c39d0f))
+
 ## [1.3.4](https://github.com/circlefin/circle-public-github-workflows/compare/v1.3.3...v1.3.4) (2025-09-11)
 
 
