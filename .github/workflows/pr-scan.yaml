@@ -38,7 +38,7 @@ on:
           Allows licenses classified as 'reciprocal' to be used.
         required: false
         type: boolean
-        default: true
+        default: false
 
 jobs:
   scan:
