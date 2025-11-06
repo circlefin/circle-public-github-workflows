@@ -109,7 +109,16 @@ jobs:
     name: PR Title and Commits Lint
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+
     steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          egress-policy: block
+          policy: global-allowed-endpoints-policy
+
       - name: Calculate Fetch Depth
         if: inputs.lint_commits
         id: fetch-depth
@@ -194,7 +203,16 @@ jobs:
       additional_tags: ${{ steps.additional_tags.outputs.tags }}
       major_minor_tag: ${{ steps.additional_tags.outputs.major_minor_tag }}
       major_tag: ${{ steps.additional_tags.outputs.major_tag }}
+    permissions:
+      id-token: write
+
     steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        with:
+          egress-policy: block
+          policy: global-allowed-endpoints-policy
+
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
 
       - name: Merge default and user input changelog types
