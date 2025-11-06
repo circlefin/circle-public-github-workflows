@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.6](https://github.com/circlefin/circle-public-github-workflows/compare/v1.3.5...v1.3.6) (2025-11-06)
+
+
+### Miscellaneous Chores
+
+* bump dependency review action version ([#35](https://github.com/circlefin/circle-public-github-workflows/issues/35)) ([5bcd8a2](https://github.com/circlefin/circle-public-github-workflows/commit/5bcd8a28c755a808a2646c2b6db36b7ecb4ae302))
+* **stepsecurity:** apply security best practices ([#34](https://github.com/circlefin/circle-public-github-workflows/issues/34)) ([aff99fd](https://github.com/circlefin/circle-public-github-workflows/commit/aff99fdb55fb5e5386636f689c3575cd514ba4d6))
+
 ## [1.3.5](https://github.com/circlefin/circle-public-github-workflows/compare/v1.3.4...v1.3.5) (2025-09-23)
 
 
