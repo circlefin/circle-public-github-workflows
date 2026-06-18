@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.7](https://github.com/circlefin/circle-public-github-workflows/compare/v1.3.6...v1.3.7) (2026-06-18)
+
+
+### Miscellaneous Chores
+
+* **ci:** bump github actions to node 24 ([#39](https://github.com/circlefin/circle-public-github-workflows/issues/39)) ([ba33189](https://github.com/circlefin/circle-public-github-workflows/commit/ba331896bc645b2260ad8c73cb15e97e30a0aa93))
+
 ## [1.3.6](https://github.com/circlefin/circle-public-github-workflows/compare/v1.3.5...v1.3.6) (2025-11-06)
 
 
