@@ -246,17 +246,54 @@ jobs:
 
             core.setOutput("changelog-types-json", JSON.stringify(changelogTypes));
 
-      - uses: google-github-actions/release-please-action@db8f2c60ee802b3748b512940dde88eabd7b7e01 # v3.7.13
+      # Build the JSON object passed to OSS v6 as `config-overrides-json`. The
+      # OSS fork dropped the v3-era inline action inputs (changelog-types,
+      # include-v-in-tag, pull-request-title-pattern, extra-files, package-name)
+      # and accepts them as a single JSON string instead. `release-type` + this
+      # JSON makes release-please run in inline-config mode
+      # (Manifest.fromConfig), preserving the v3 behavior without requiring
+      # callers to commit a release-please-config.json file.
+      - name: Build release-please config-overrides JSON
+        id: build-config-overrides
+        env:
+          PKG_NAME: ${{ github.event.repository.name }}
+          CHANGELOG_SECTIONS: ${{ steps.merge-changelog-types.outputs.changelog-types-json }}
+          INCLUDE_V_IN_TAG: ${{ inputs.include_v_in_tag }}
+          PR_TITLE_PATTERN: ${{ inputs.pull_request_title_template }}
+          EXTRA_FILES: ${{ inputs.extra_files }}
+        run: |
+          # v3 accepted extra-files as a newline- or comma-separated string;
+          # OSS v6 expects a JSON array. Split on either delimiter, trim
+          # per-entry whitespace so "a, b, c" -> ["a","b","c"], drop blanks.
+          if [ -n "${EXTRA_FILES:-}" ]; then
+            extra_files_json=$(printf '%s\n' "$EXTRA_FILES" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sed '/^$/d' | jq -R . | jq -s -c .)
+          else
+            extra_files_json='[]'
+          fi
+
+          overrides=$(jq -n -c \
+            --arg pkg "$PKG_NAME" \
+            --argjson sections "$CHANGELOG_SECTIONS" \
+            --argjson v_in_tag "$INCLUDE_V_IN_TAG" \
+            --arg pr_title "$PR_TITLE_PATTERN" \
+            --argjson extra_files "$extra_files_json" \
+            '{
+              "package-name": $pkg,
+              "changelog-sections": $sections,
+              "include-v-in-tag": $v_in_tag,
+              "pull-request-title-pattern": $pr_title,
+              "extra-files": $extra_files
+            }')
+
+          echo "json=$overrides" >> "$GITHUB_OUTPUT"
+
+      - uses: step-security/release-please-action-oss@af33b76a7bcd035c1d8837e0190cbf85f719e158 # v6.0.2
         id: release
         with:
-          default-branch: ${{ github.event.repository.default_branch }}
-          release-type: ${{ inputs.release_type }}
-          package-name: ${{ github.event.repository.name }}
-          changelog-types: ${{ steps.merge-changelog-types.outputs.changelog-types-json }}
-          include-v-in-tag: ${{ inputs.include_v_in_tag }}
-          pull-request-title-pattern: ${{ inputs.pull_request_title_template }}
-          extra-files: ${{ inputs.extra_files }}
           token: ${{ secrets.RELEASE_TOKEN }}
+          target-branch: ${{ github.event.repository.default_branch }}
+          release-type: ${{ inputs.release_type }}
+          config-overrides-json: ${{ steps.build-config-overrides.outputs.json }}
 
 
       - name: Checkout Release Branch
