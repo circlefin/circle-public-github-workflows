@@ -19,6 +19,9 @@ name: Lint/Validate Github Actions files
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   lint_validate_actions:
     runs-on: ubuntu-latest
