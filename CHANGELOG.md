@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.8](https://github.com/circlefin/circle-public-github-workflows/compare/v1.3.7...v1.3.8) (2026-07-01)
+
+
+### Miscellaneous Chores
+
+* **ci:** swap release-please path to step-security fork on node 24 ([#41](https://github.com/circlefin/circle-public-github-workflows/issues/41)) ([a0f2042](https://github.com/circlefin/circle-public-github-workflows/commit/a0f2042d8a5d1a1958b31bd6af3718d46912e5f5))
+
 ## [1.3.7](https://github.com/circlefin/circle-public-github-workflows/compare/v1.3.6...v1.3.7) (2026-06-18)
 
 
