@@ -138,7 +138,7 @@ jobs:
           if [ -s "${PATHS_FILE}" ]; then
             echo "Found the following matching artifacts: "
             cat "${PATHS_FILE}"
-            while IFS="" read -r file || [ -n "$p" ]
+            while IFS="" read -r file || [ -n "$file" ]
             do
               mv "$file" ${ASSETS_DIR}/$(basename "$file")
             done < "${PATHS_FILE}"
