@@ -70,6 +70,12 @@ on:
         type: string
         required: false
         default: ""
+      runs-on:
+        description: |
+          Github runner on which this workflow should run.
+        required: false
+        type: string
+        default: ubuntu-latest
     outputs:
       release_created:
         description: "Whether or not a release has been created in this workflow instance"
@@ -108,7 +114,7 @@ jobs:
   commit-lint:
     name: PR Title and Commits Lint
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     permissions:
       id-token: write
 
@@ -196,7 +202,7 @@ jobs:
   release:
     if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     name: Release Please
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       release_tag: ${{ steps.release.outputs.tag_name }}
