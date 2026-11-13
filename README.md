@@ -10,3 +10,23 @@ This repository contains the following shareable workflows under `.github/workfl
 * attach-release-assets - Attaches SBOM and other build artifacts to releases along with a manifest file.
 * conventional-commit-release - Lints commit messages and PR titles to ensure compliance with [Conventional Commits](https://www.conventionalcommits.org); on default branch builds it will execute the [release-please action](https://github.com/google-github-actions/release-please-action) to generate Github releases & changelogs.
 * pr-scan - Executes the [dependency-review-action](https://github.com/actions/dependency-review-action) to check for vulnerabilities and license compliance in pull request dependencies.
+
+## Permissions
+
+The `pr-scan` and `attach-release-assets` jobs request `id-token: write`. The calling job must grant it, or the run fails before it starts.
+
+```yaml
+jobs:
+  scan:
+    uses: circlefin/circle-public-github-workflows/.github/workflows/pr-scan.yaml@v1
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+
+  release-sbom:
+    uses: circlefin/circle-public-github-workflows/.github/workflows/attach-release-assets.yaml@v1
+    permissions:
+      contents: write
+      id-token: write
+```

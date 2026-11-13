@@ -43,7 +43,11 @@ on:
 jobs:
   scan:
     runs-on: ${{ inputs.runs-on }}
+    # A job-level permissions block replaces the full token permission set.
+    # List every permission that this job needs.
     permissions:
+      contents: read
+      pull-requests: write
       id-token: write
 
     steps:
