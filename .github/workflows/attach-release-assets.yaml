@@ -70,7 +70,10 @@ jobs:
   release_attach_assets:
     runs-on: ${{ inputs.runs-on }}
     if: github.event_name == 'push' && format('refs/heads/{0}', github.event.repository.default_branch) == github.ref
+    # A job-level permissions block replaces the full token permission set.
+    # List every permission that this job needs.
     permissions:
+      contents: write
       id-token: write
 
     steps:
