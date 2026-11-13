@@ -40,6 +40,9 @@ on:
         type: boolean
         default: true
 
+permissions:
+  contents: read
+
 jobs:
   scan:
     runs-on: ${{ inputs.runs-on }}
